@@ -1,0 +1,23 @@
+---
+
+- name: hopefully i can do this myself
+
+  hosts: csr
+
+  tasks:
+
+  -   name: gather interface information for vlan 999
+      cisco.ios.ios_facts:
+        #gather_subset:
+         # - l3_interfaces
+        gather_network_resources:
+          - interfaces 
+      register: interfaces
+  
+  -   name: print gathered text
+      with_items: "{{ interfaces }}"
+      debug:
+        msg: "{{ interfaces }}"
+      when: interfaces.name == "Loopback200"
+
+...
