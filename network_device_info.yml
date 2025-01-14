@@ -1,0 +1,54 @@
+---
+
+- name: gather network device info
+  hosts: ios
+  gather_facts: false
+  vars:
+    sw3_models:
+      - "WS-C3850-48P"
+      - "WS-C3850-48XS"
+      - "WS-C3850-24XS"
+      - "WS-C3850-24S"
+    sw4_models:
+      - "C9500-48Y4C"
+      - "C9500-24Y4C"
+      - "C9300-48Y4C"
+      - "C9300-48P"
+    sw5_models:
+      - "C9500-48Y4C"
+      - "C9500-24Y4C"
+      - "C9300-48Y4C"
+      - "C9300-48P"
+    sw3_upgrade_version = "16.12.12"
+    sw4_upgrade_version = "17.12.04"
+    sw5_upgrade_version = "17.12.04"
+
+  tasks:
+    - name: determine CANES version # find the the current version of CANES with the banner
+      cisco.ios.ios_command:
+        commands: show running-config | include HW
+      register: canes_hw_ver
+
+    - name: print CANES HW version # register CANES version found in banner of running config
+      debug:
+        msg: "this device is {{ canes_hw_ver }}"
+  
+    - name: get cisco device information # gather current IOS version, switch model, and available storage
+      cisco.ios.ios_facts:
+        gather_subset:
+          - "!interfaces"
+          - "!config"
+      vars:
+        ansible_command_timeout: 120
+
+    - name: check ios compliance- SW3
+      assert:
+        that:
+          ansible_net_verison != "{{ sw3_upgrade_version }}"
+        fail_msg:
+          - "current version is {{ ansible_net_version }}"
+          - "image is compliant and will not be upgraded"
+        success_msg:
+          - "image is not compliant and will be upgraded"
+          - "current version is {{ ansible_net_version }}"
+      when: {{ ansible_net_model}} in sw3_models 
